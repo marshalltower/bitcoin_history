@@ -1,0 +1,40 @@
+version: '2'
+
+services: 
+    dbsrv:
+      image: dbsrv
+      build: ./dbsrv
+      healthcheck:
+        test: ['CMD-SHELL', 'pg_isready -U postgres']
+        interval: 5s
+        timeout: 5s
+        retries: 5
+      environment: 
+        - POSTGRES_PASSWORD=P@ssw0rd!
+      volumes: 
+        - db:/var/lib/postgresql/data
+    reader:
+      image: csvreader
+      build: ./csvreader
+      depends_on:
+        dbsrv:
+          condition: service_healthy
+      environment: 
+        - DB_PASSWD=P@ssw0rd!
+        - MILLISECONDS=1000
+      volumes:
+        - ./bitcoin_csv.csv:/usr/src/app/bitcoin_csv.csv
+    websrv:
+      image: websrv
+      build: ./websrv
+      ports:
+        - '80:80'
+      depends_on: 
+        dbsrv:
+          condition: service_healthy
+      environment: 
+        - DB_PASSWD=P@ssw0rd!
+
+volumes: 
+  db:
+  bitcoin_csv.csv:
